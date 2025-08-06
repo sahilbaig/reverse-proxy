@@ -1,31 +1,15 @@
-# ====== Builder stage ======
-FROM golang:1.24.5-alpine AS builder
+# Development image
+FROM golang:1.24.5-alpine
 
 WORKDIR /app
 
-# Copy Go mod files first (better caching)
+# Install air (using the correct package)
+RUN go install github.com/air-verse/air@latest
+
+# Copy files
 COPY go.mod go.sum ./
 RUN go mod download
-
-# Copy source
 COPY . .
 
-# Build binary
-RUN go build -o server main.go
-
-# ====== Final image ======
-FROM alpine:latest
-
-WORKDIR /app
-
-# Copy the built binary
-COPY --from=builder /app/server .
-
-# Expose port
-EXPOSE 7001
-
-# Set default env var (can be overridden during runtime)
-ENV PROXY_TARGET=http://localhost:8080
-
-# Run the binary
-ENTRYPOINT ["./server"]
+# Default air command (no config file needed)
+CMD ["air"]
